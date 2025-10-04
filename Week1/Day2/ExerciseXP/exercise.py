@@ -1,4 +1,6 @@
 import random
+
+# Exercise 1
 # You are given two lists. Convert them into a dictionary where the first list contains the keys and the second list contains the corresponding values.
 
 # Lists:
@@ -17,6 +19,8 @@ values = [10, 20, 30]
 dictionary = dict(zip(keys, values))
 
 print(dictionary)
+
+# Exercise 2
 
 ## Write a program that calculates the total cost of movie tickets for a family based on their ages.
 
@@ -84,6 +88,8 @@ while(True):
 
 total_cost = ticket_calculator(family)
 print(f"The total cost for the whole family is : {total_cost}$")
+
+# Exercise 3
 
 # Create and manipulate a dictionary that contains information about the Zara brand.
 
@@ -170,6 +176,8 @@ more_on_zara = {"creation_date" : 2025,
 brand.update(more_on_zara)
 print(brand)
 
+# Exercise 4
+
 # Define a function named describe_city().
 # This function should accept two parameters: city and country.
 # Give the country parameter a default value, such as “Unknown”.
@@ -195,6 +203,8 @@ describe_city("Bamako")
 describe_city("Reykjavik", "Iceland")
 describe_city("Paris")
 
+
+# Exercise 5
 
 # Step 1: Import the random Module
 
@@ -225,6 +235,8 @@ def int_accept(number):
         return None
 int_accept(39)
 
+
+# Exercise 6
 
 # Step 1: Define a Function with Parameters
 
@@ -263,6 +275,9 @@ make_shirt("small","small is the new tall")
 make_shirt("extra large","Giantororus")
 
 make_shirt(size="small", text="Hello!")
+
+
+# Exercise 7
 
 
 # Step 1: Create the get_random_temp() Function
@@ -359,6 +374,8 @@ for season in range(1, season_list_length + 1):
 print(f"The season is : {season_output}")
 main(season_output)
 
+
+# Exercise 8
 
 # Write a loop that asks the user to enter pizza toppings one by one.
 # Stop the loop when the user types 'quit'.
