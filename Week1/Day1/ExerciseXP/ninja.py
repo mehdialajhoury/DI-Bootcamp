@@ -60,7 +60,9 @@ print("Try again ! There is a A in your sentence")
 # Bonus: The average amount of words per sentence in the paragraph.
 # Bonus: the amount of non-unique words in the paragraph.
 
-sentence = "It is a sentence. It is nice."
+sentence = "Python is an interpreted, object-oriented, high-level programming language with dynamic semantics."
+sentence = sentence + "It has built-in data structures, combined with dynamic typing and dynamic binding, making it very attractive for rapid application development, scripting, or as a glue language to connect existing components together."
+sentence = sentence + "Python was originally created in 1991 by Guido van Rossum."
 sentence_length = len(sentence)
 
 
