@@ -66,7 +66,13 @@ class PetDog(Dog):
         return self.bark()
     
     def play(self,*args):
-        print(f"all play together")
+        dogs_list_string = ""
+        for dog in args:
+            if dogs_list_string != "":
+                dogs_list_string = dogs_list_string + ", " + dog.name
+            else:
+                dogs_list_string = dog.name
+        print(f"{dogs_list_string} : all play together")
 
     def do_a_trick(self):
         tricks = ["does a barrel roll", "stands on his back legs", "shakes your hand", "plays dead"]
@@ -75,7 +81,9 @@ class PetDog(Dog):
     
 # Test Program
 
-dog1=PetDog("Bingo",15,13)
+dog1 = PetDog("Bingo",15,13)
+dog2 = PetDog("Shana",3,30)
+dog3 = PetDog("Aspro",1,25)
 print(dog1.train())
 dog1.do_a_trick()
-dog1.play()
+dog1.play(dog1,dog2,dog3)
