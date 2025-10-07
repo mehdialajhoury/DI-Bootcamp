@@ -19,6 +19,11 @@ class Circle:
     
     def area(self):
         return (math.pi.radius)**2
+    
+    def definition(self):
+        return print("A circle is all points in the same plane that lie at an equal distance from a center point.\nThe "
+              "circle is only composed of the points on the border.\nYou could think of a circle as a hula "
+              "hoop.\nIt's only the points on the border that are the circle")
 
 
 """Exercise 2 : Custom List Class
@@ -88,7 +93,7 @@ Create a method called update_item(name, price, spice, gluten). This method chec
 
 Create a method called remove_item(name). This method should check if the dish is in the menu, if the dish exists then delete it and print the updated dictionary. If not notify the manager that the dish is not in the menu."""
 
-class MenuManager():
+class MenuManager:
     
     def __init__(self):
         self.menu = []
