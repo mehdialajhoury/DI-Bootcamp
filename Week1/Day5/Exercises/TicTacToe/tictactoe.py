@@ -47,7 +47,6 @@ def display_board():
         row_input = int(input("Enter row"))
         column_input = int(input("Enter column"))
 
-        #matrix[row_input][column_input] = player
         print(f"row chosen {row_input}")
         print(f"row chosen {column_input}")
         
@@ -59,24 +58,23 @@ def display_board():
 
 def check_win(matrix):
    
-    # Vérifier les 3 lignes
+    #Check rows
     for row in matrix:
         if row[0] == row[1] == row[2] != " ":
-            return True   # retourne "X" ou "O"
-
-    # Vérifier les 3 colonnes
+            return True 
+        
+    # Check cols   
     for col in range(3):
         if matrix[0][col] == matrix[1][col] == matrix[2][col] != " ":
             return True
 
-    # Vérifier les diagonales
+    # Check diag
     if matrix[0][0] == matrix[1][1] == matrix[2][2] != " ":
         return True
-
     if matrix[0][2] == matrix[1][1] == matrix[2][0] != " ":
         return True
 
-    # Si pas de gagnant
+    # If no wins
     return None
     
 player = "X"
