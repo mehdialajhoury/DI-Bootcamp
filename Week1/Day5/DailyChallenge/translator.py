@@ -23,3 +23,5 @@ dict_trad = {}
 
 for word in french_words:
   dict_trad[word] = asyncio.run(TranslateText(word))
+
+print(dict_trad)
