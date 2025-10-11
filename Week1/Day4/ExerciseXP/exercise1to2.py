@@ -61,7 +61,7 @@ class Siamese(Cat):
     
 all_cats = []
 
-print(all_cats.index("Piou"))
+print(all_cats)
 
 cat1 = Siamese("Niels",5)
 cat2 = Chartreux("Oscar",4)

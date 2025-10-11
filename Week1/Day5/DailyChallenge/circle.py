@@ -1,8 +1,5 @@
 import math
 import turtle
-# myTurtle = turtle.Turtle()
-# myTurtle.circle(50)
-# turtle.getscreen()._root.mainloop()
 
 class Circle:
     def __init__(self,radius,diameter=None):
@@ -41,8 +38,6 @@ class Circle:
         self.list_circles.append(self)
         return sorted(self.list_circles, key=lambda self: self.radius, reverse=True)
         
-        
-    
 # Test program
 
 circle1 = Circle(15)
