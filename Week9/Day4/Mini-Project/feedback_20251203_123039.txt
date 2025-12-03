@@ -1,0 +1,31 @@
+URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day4/Mini-Project/.vscode/settings.json
+suggestions for improvement:
+- This file appears to be a VS Code settings file related to Python environments. It has nothing to do with the actual task of building an agentic application that integrates third-party MCP servers, interacts with an LLM, and fulfills specific functional requirements as outlined in the provided document.
+- The file doesn't address any of the core requirements of the mini-project.
+Correctness: 0.0%
+-----
+URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day4/Mini-Project/agent_logic.py
+suggestions for improvement:
+- Consider adding error handling for the Ollama case in `_call_llm`, similar to the `BadRequestError` handling for Groq.
+- Implement retries or fallback strategies more explicitly, especially if tools fail due to timeouts or bad inputs as required.
+- Ensure that the logging includes summarized inputs/outputs of tool calls without exposing secrets.
+- Consider using a more structured approach to managing environment variables and configuration.
+Correctness: 75%
+-----
+URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day4/Mini-Project/app.py
+suggestions for improvement:
+- The provided code snippet shows the Streamlit integration and overall application structure but the crucial part concerning the integration of at least two third-party MCP servers and the 'your own' server isn't visible here. The agent_logic.py code is missing.
+- Error handling could be improved with more specific exception handling and more informative error messages for the user.
+- Consider adding configurable options for the LLM backend (Groq or Ollama) as environment variables, as suggested in the 'Config' requirement.
+Correctness: 75%
+-----
+URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day4/Mini-Project/requirements.txt
+suggestions for improvement:
+- The response only provides a list of libraries/technologies, but does not provide any code that implements the required functionality. The task requires building an end-to-end agentic application using third-party MCP servers, an LLM for planning, and error handling. The response does not address any of these requirements.
+Correctness: 0.0%
+-----
+URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day4/Mini-Project/test.py
+suggestions for improvement:
+- Skipping file (too many comments or blank lines).
+Correctness: N/A%
+-----
