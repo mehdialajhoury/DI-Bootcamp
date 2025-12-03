@@ -1,0 +1,6 @@
+mcp
+groq
+ollama
+python-dotenv
+streamlit
+nest_asyncio
