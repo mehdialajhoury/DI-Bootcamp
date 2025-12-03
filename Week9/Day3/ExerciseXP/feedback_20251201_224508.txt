@@ -1,0 +1,16 @@
+URL: URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day3/ExerciseXP/requirements.txt
+suggestions for improvement:
+- Skipping file (too many comments or blank lines).
+Correctness: N/A%
+-----
+URL: URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day3/ExerciseXP/starter.py
+suggestions for improvement:
+- Consider adding more comments in the `take_action` method to explain the decision logic for penguin actions.
+- The `find_food` tool could benefit from a more descriptive message, possibly incorporating the amount of food found.
+Correctness: 100%
+-----
+URL: URL: https://github.com/mehdialajhoury/DI-Bootcamp/blob/main/Week9/Day3/ExerciseXP/test.py
+suggestions for improvement:
+- Skipping file (too many comments or blank lines).
+Correctness: N/A%
+-----
