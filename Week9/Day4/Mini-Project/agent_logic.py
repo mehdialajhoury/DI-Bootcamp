@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import logging
 import asyncio
@@ -9,55 +10,41 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from contextlib import AsyncExitStack
 
-from groq import Groq, BadRequestError # On importe l'erreur spécifique
+from groq import Groq, BadRequestError
 import ollama
 
-# Charger les variables d'environnement
 load_dotenv()
 
-# --- DIAGNOSTIC AU DÉMARRAGE ---
+# --- DIAGNOSTIC ---
 print("--- DÉBUT DIAGNOSTIC ---")
 token = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
 if not token:
-    print("ERREUR FATALE : GITHUB_PERSONAL_ACCESS_TOKEN est vide ou introuvable dans .env")
+    print("ERREUR : Token GitHub manquant.")
 else:
-    print(f"Token GitHub trouvé : {token[:4]}...")
+    print(f"Token GitHub trouvé.")
 
 base_dir = os.getenv("ALLOWED_DIR", "./workspace")
 abs_path = os.path.abspath(base_dir)
-
 if not os.path.exists(abs_path):
-    print(f"Le dossier '{abs_path}' n'existait pas, création en cours...")
     os.makedirs(abs_path, exist_ok=True)
-else:
-    print(f"Dossier Workspace détecté : {abs_path}")
+print(f"Workspace : {abs_path}")
 print("--- FIN DIAGNOSTIC ---")
 
 
-# --- 1. Custom Tool ---
-def local_sentiment_analysis(text: str) -> str:
-    text = text.lower()
-    if any(x in text for x in ["crash", "broken", "emergency", "fatal"]):
-        return "Critical Priority"
-    elif any(x in text for x in ["bug", "error", "fail", "wrong"]):
-        return "Warning"
-    return "Neutral/Info"
-
-# --- 2. The Agent Class ---
 class MCPAgent:
     def __init__(self):
         self.provider = os.getenv("LLM_PROVIDER", "groq")
         
-        # --- FIX STRICT : On interdit formellement la simulation ---
+        # Prompt Système strict
         system_prompt = (
-            "You are a Research Commander. You have access to GitHub, a Filesystem, and a Local Analysis tool. "
-            "Plan your steps. Always fetch data first, analyze it, then save it. "
+            "You are a Senior Tech Lead Agent. You have access to 3 servers: "
+            "1. GitHub (Fetch data), 2. Filesystem (Save reports), 3. SmartSentinel (Analyze risk). "
             "CRITICAL RULES:"
-            "1. You must use the tools provided to get REAL data."
-            "2. Do NOT simulate or guess what the tool will return."
-            "3. Do NOT make assumptions like 'Assuming the response is...'."
-            "4. When you call a tool, STOP speaking and wait for the result."
-            "5. Use standard JSON format for tool calls."
+            "1. Always fetch real data from GitHub first."
+            "2. Send that data to SmartSentinel tools to get analysis."
+            "3. Only use Filesystem to save the FINAL result."
+            "4. Do NOT simulate tool outputs. Wait for real execution."
+            "5. Use standard JSON for tool calls."
         )
         
         self.history = [{"role": "system", "content": system_prompt}]
@@ -68,49 +55,58 @@ class MCPAgent:
     async def run_process(self, user_prompt: str) -> AsyncGenerator[Dict, None]:
         self.history.append({"role": "user", "content": user_prompt})
 
-        # Config Serveurs
+        # --- 1. CONFIGURATION DES 3 SERVEURS ---
+        
+        # Serveur A : GitHub (Node.js)
         github_params = StdioServerParameters(
             command="npx",
             args=["@modelcontextprotocol/server-github"],
             env={**os.environ}
         )
         
+        # Serveur B : Filesystem (Node.js)
         fs_params = StdioServerParameters(
             command="npx",
             args=["@modelcontextprotocol/server-filesystem", abs_path],
             env={**os.environ}
         )
 
+        # Serveur C : VOTRE Serveur (Python)
+        # On utilise sys.executable pour s'assurer qu'il utilise le même Python (venv)
+        my_server_params = StdioServerParameters(
+            command=sys.executable,
+            args=["my_server.py"],
+            env={**os.environ}
+        )
+
         try:
             async with AsyncExitStack() as stack:
-                yield {"type": "log", "content": "Tentative de connexion aux serveurs MCP..."}
+                yield {"type": "log", "content": "Connexion aux 3 serveurs (GitHub, FS, Sentinel)..."}
                 
-                # 1. Start GitHub
-                try:
-                    gh_read, gh_write = await stack.enter_async_context(stdio_client(github_params))
-                    gh_session = await stack.enter_async_context(ClientSession(gh_read, gh_write))
-                    await gh_session.initialize()
-                    yield {"type": "log", "content": "GitHub connecté."}
-                except Exception as e:
-                    print(f"ERREUR GITHUB DETAILEE: {e}")
-                    raise e
+                # Connexion GitHub
+                gh_read, gh_write = await stack.enter_async_context(stdio_client(github_params))
+                gh_session = await stack.enter_async_context(ClientSession(gh_read, gh_write))
+                await gh_session.initialize()
+                
+                # Connexion Filesystem
+                fs_read, fs_write = await stack.enter_async_context(stdio_client(fs_params))
+                fs_session = await stack.enter_async_context(ClientSession(fs_read, fs_write))
+                await fs_session.initialize()
 
-                # 2. Start Filesystem
-                try:
-                    fs_read, fs_write = await stack.enter_async_context(stdio_client(fs_params))
-                    fs_session = await stack.enter_async_context(ClientSession(fs_read, fs_write))
-                    await fs_session.initialize()
-                    yield {"type": "log", "content": "Filesystem connecté."}
-                except Exception as e:
-                    print(f"ERREUR FILESYSTEM DETAILEE: {e}")
-                    raise e
+                # Connexion SmartSentinel (VOTRE SERVEUR)
+                sentinel_read, sentinel_write = await stack.enter_async_context(stdio_client(my_server_params))
+                sentinel_session = await stack.enter_async_context(ClientSession(sentinel_read, sentinel_write))
+                await sentinel_session.initialize()
 
-                # Tool Aggregation
+                yield {"type": "log", "content": "Les 3 serveurs sont connectés !"}
+
+                # --- AGRÉGATION DES OUTILS ---
                 tools = []
                 tool_map = {}
 
-                def add_tools(mcp_tools, session):
-                    for t in mcp_tools.tools:
+                async def register_tools(session, source_name):
+                    t_list = await session.list_tools()
+                    for t in t_list.tools:
                         tools.append({
                             "type": "function",
                             "function": {
@@ -120,40 +116,27 @@ class MCPAgent:
                             }
                         })
                         tool_map[t.name] = session
+                        # Log pour vérifier que vos outils sont bien là
+                        if source_name == "Sentinel":
+                            print(f"   Outil chargé : {t.name}")
 
-                gh_tools = await gh_session.list_tools()
-                fs_tools = await fs_session.list_tools()
-                
-                add_tools(gh_tools, gh_session)
-                add_tools(fs_tools, fs_session)
+                await register_tools(gh_session, "GitHub")
+                await register_tools(fs_session, "Filesystem")
+                await register_tools(sentinel_session, "Sentinel")
 
-                tools.append({
-                    "type": "function",
-                    "function": {
-                        "name": "local_sentiment_analysis",
-                        "description": "Analyze text priority/sentiment.",
-                        "parameters": {"type": "object", "properties": {"text": {"type": "string"}}, "required": ["text"]}
-                    }
-                })
+                yield {"type": "log", "content": f"  Total outils disponibles : {len(tools)}"}
 
-                yield {"type": "log", "content": f"  {len(tools)} outils chargés. Début du raisonnement..."}
-
-                # Reasoning Loop
+                # --- BOUCLE DE RAISONNEMENT ---
                 while True:
-                    # Appel LLM avec gestion d'erreur spécifique Groq
                     try:
                         raw_response = self._call_llm(tools)
                     except BadRequestError as e:
-                        error_msg = str(e)
-                        if "tool_use_failed" in error_msg:
-                            yield {"type": "log", "content": "L'IA a mal formaté sa demande. Nouvelle tentative..."}
-                            # On ajoute un rappel à l'ordre dans l'historique et on continue
-                            self.history.append({"role": "user", "content": "Error: You used an invalid format. Do not use XML. Use JSON tool calls."})
+                        if "tool_use_failed" in str(e):
+                            self.history.append({"role": "user", "content": "Error: Invalid Format. Use JSON."})
                             continue
-                        else:
-                            raise e
+                        raise e
 
-                    # Nettoyage pour Groq (Anti-Bug annotations)
+                    # Nettoyage Groq
                     clean_response = {
                         "role": raw_response["role"],
                         "content": raw_response.get("content")
@@ -162,29 +145,28 @@ class MCPAgent:
                         clean_response["tool_calls"] = raw_response["tool_calls"]
                     
                     self.history.append(clean_response)
-                    response_msg = clean_response
-
-                    if not response_msg.get("tool_calls"):
-                        yield {"type": "answer", "content": response_msg["content"]}
+                    
+                    if not clean_response.get("tool_calls"):
+                        yield {"type": "answer", "content": clean_response["content"]}
                         break
 
-                    for tool_call in response_msg["tool_calls"]:
+                    # Exécution des outils
+                    for tool_call in clean_response["tool_calls"]:
                         fn_name = tool_call["function"]["name"]
                         fn_args = json.loads(tool_call["function"]["arguments"])
                         
-                        yield {"type": "log", "content": f"Exécution : **{fn_name}**"}
+                        yield {"type": "log", "content": f" Exécution : **{fn_name}**"}
                         
                         try:
-                            if fn_name == "local_sentiment_analysis":
-                                result = local_sentiment_analysis(fn_args["text"])
-                            elif fn_name in tool_map:
+                            if fn_name in tool_map:
+                                # Appel via MCP
                                 mcp_res = await tool_map[fn_name].call_tool(fn_name, arguments=fn_args)
                                 result = mcp_res.content[0].text
                             else:
                                 result = "Error: Tool not found."
                         except Exception as e:
-                            result = f"Error executing tool: {str(e)}"
-                            yield {"type": "log", "content": f"Erreur outil : {result}"}
+                            result = f"Error: {str(e)}"
+                            yield {"type": "log", "content": f" Erreur : {result}"}
 
                         self.history.append({
                             "role": "tool",
@@ -192,12 +174,9 @@ class MCPAgent:
                             "name": fn_name,
                             "content": str(result)
                         })
-                        
+
         except Exception as e:
-            print(f"ERREUR CRITIQUE DANS L'AGENT : {e}")
-            if hasattr(e, 'exceptions'):
-                for i, sub_e in enumerate(e.exceptions):
-                    print(f"SOUS-ERREUR {i+1}: {sub_e}")
+            print(f" ERREUR AGENT : {e}")
             import traceback
             traceback.print_exc()
             raise e
@@ -212,9 +191,5 @@ class MCPAgent:
             )
             return res.choices[0].message.model_dump()
         elif self.provider == "ollama":
-            res = ollama.chat(
-                model=os.getenv("OLLAMA_MODEL"),
-                messages=self.history,
-                tools=tools
-            )
+            res = ollama.chat(model=os.getenv("OLLAMA_MODEL"), messages=self.history, tools=tools)
             return res["message"]
