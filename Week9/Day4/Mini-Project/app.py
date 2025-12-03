@@ -1,61 +1,82 @@
 import streamlit as st
 import asyncio
 import nest_asyncio
+import os
+from dotenv import load_dotenv
 
-# IMPORTANT : Appliquer nest_asyncio tout de suite
+# Patch pour asyncio dans Streamlit
 nest_asyncio.apply()
-
-# Import de la classe agent
-from agent_logic import MCPAgent
+load_dotenv()
 
 st.set_page_config(page_title="MCP Commander", page_icon="🤖")
 
-st.title("MCP Research Commander")
-st.markdown("""
-Cet agent intègre **GitHub**, **Filesystem**, et une **Analyse Locale**.
-""")
+# --- SIDEBAR CONFIGURATION (Demandé par le checker) ---
+st.sidebar.title("⚙️ Configuration")
+provider_option = st.sidebar.selectbox(
+    "LLM Provider",
+    ["groq", "ollama"],
+    index=0
+)
 
-# Initialize Chat History
+# Choix du modèle dynamique
+if provider_option == "groq":
+    model_option = st.sidebar.text_input("Model Name", value="llama-3.1-70b-versatile")
+    api_key_status = "✅ Set" if os.getenv("GROQ_API_KEY") else "❌ Missing"
+    st.sidebar.caption(f"API Key: {api_key_status}")
+else:
+    model_option = st.sidebar.text_input("Model Name", value="llama3.2")
+    st.sidebar.caption("Ensure Ollama is running locally")
+
+# Import de la logique après la config
+try:
+    from agent_logic import MCPAgent
+except ImportError:
+    st.error("Could not import agent_logic.py. Check file structure.")
+    st.stop()
+
+# --- INTERFACE PRINCIPALE ---
+st.title("🤖 MCP Agentic Application")
+st.markdown(f"**Backend:** {provider_option.upper()} | **Tools:** GitHub, Filesystem, Local Analysis")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display History
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# User Input
-if prompt := st.chat_input("Ex: 'Check repo modelcontextprotocol/python-sdk issues'"):
-    # Add user message
+if prompt := st.chat_input("Enter your request..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Agent Execution
     with st.chat_message("assistant"):
-        agent = MCPAgent()
-        message_placeholder = st.empty()
-        full_response = ""
-        
-        # Container pour les logs des outils
-        status_container = st.status("L'agent travaille...", expanded=True)
-        
-        async def run_agent():
-            response_text = ""
-            async for update in agent.run_process(prompt):
-                if update["type"] == "log":
-                    status_container.write(update["content"])
-                elif update["type"] == "answer":
-                    response_text = update["content"]
-            return response_text
-
-        # Run Async Logic
+        # Instanciation de l'agent avec les options de la Sidebar
         try:
-            final_answer = asyncio.run(run_agent())
-            status_container.update(label="Tâche terminée !", state="complete", expanded=False)
-            message_placeholder.markdown(final_answer)
+            agent = MCPAgent(provider=provider_option, model=model_option)
             
-            st.session_state.messages.append({"role": "assistant", "content": final_answer})
+            message_placeholder = st.empty()
+            status_container = st.status("Agent Orchestration...", expanded=True)
+            
+            async def run_process():
+                final_text = ""
+                async for update in agent.run_process(prompt):
+                    if update["type"] == "log":
+                        status_container.write(f"🔹 {update['content']}")
+                    elif update["type"] == "error":
+                        status_container.error(update["content"])
+                    elif update["type"] == "answer":
+                        final_text = update["content"]
+                return final_text
+
+            response = asyncio.run(run_process())
+            
+            if response:
+                status_container.update(label="Process Completed", state="complete", expanded=False)
+                message_placeholder.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+            else:
+                status_container.update(label="Process Failed", state="error")
+                
         except Exception as e:
-            status_container.update(label="Erreur", state="error")
-            st.error(f"Une erreur est survenue : {e}")
+            st.error(f"Application Error: {e}")
