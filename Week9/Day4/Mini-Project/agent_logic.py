@@ -19,18 +19,18 @@ load_dotenv()
 print("--- DÉBUT DIAGNOSTIC ---")
 token = os.getenv("GITHUB_PERSONAL_ACCESS_TOKEN")
 if not token:
-    print("❌ ERREUR FATALE : GITHUB_PERSONAL_ACCESS_TOKEN est vide ou introuvable dans .env")
+    print("ERREUR FATALE : GITHUB_PERSONAL_ACCESS_TOKEN est vide ou introuvable dans .env")
 else:
-    print(f"✅ Token GitHub trouvé : {token[:4]}...")
+    print(f"Token GitHub trouvé : {token[:4]}...")
 
 base_dir = os.getenv("ALLOWED_DIR", "./workspace")
 abs_path = os.path.abspath(base_dir)
 
 if not os.path.exists(abs_path):
-    print(f"⚠️ Le dossier '{abs_path}' n'existait pas, création en cours...")
+    print(f"Le dossier '{abs_path}' n'existait pas, création en cours...")
     os.makedirs(abs_path, exist_ok=True)
 else:
-    print(f"✅ Dossier Workspace détecté : {abs_path}")
+    print(f"Dossier Workspace détecté : {abs_path}")
 print("--- FIN DIAGNOSTIC ---")
 
 
@@ -38,10 +38,10 @@ print("--- FIN DIAGNOSTIC ---")
 def local_sentiment_analysis(text: str) -> str:
     text = text.lower()
     if any(x in text for x in ["crash", "broken", "emergency", "fatal"]):
-        return "Critical Priority 🔴"
+        return "Critical Priority"
     elif any(x in text for x in ["bug", "error", "fail", "wrong"]):
-        return "Warning 🟠"
-    return "Neutral/Info 🟢"
+        return "Warning"
+    return "Neutral/Info"
 
 # --- 2. The Agent Class ---
 class MCPAgent:
@@ -83,14 +83,14 @@ class MCPAgent:
 
         try:
             async with AsyncExitStack() as stack:
-                yield {"type": "log", "content": "🔌 Tentative de connexion aux serveurs MCP..."}
+                yield {"type": "log", "content": "Tentative de connexion aux serveurs MCP..."}
                 
                 # 1. Start GitHub
                 try:
                     gh_read, gh_write = await stack.enter_async_context(stdio_client(github_params))
                     gh_session = await stack.enter_async_context(ClientSession(gh_read, gh_write))
                     await gh_session.initialize()
-                    yield {"type": "log", "content": "✅ GitHub connecté."}
+                    yield {"type": "log", "content": "GitHub connecté."}
                 except Exception as e:
                     print(f"ERREUR GITHUB DETAILEE: {e}")
                     raise e
@@ -100,7 +100,7 @@ class MCPAgent:
                     fs_read, fs_write = await stack.enter_async_context(stdio_client(fs_params))
                     fs_session = await stack.enter_async_context(ClientSession(fs_read, fs_write))
                     await fs_session.initialize()
-                    yield {"type": "log", "content": "✅ Filesystem connecté."}
+                    yield {"type": "log", "content": "Filesystem connecté."}
                 except Exception as e:
                     print(f"ERREUR FILESYSTEM DETAILEE: {e}")
                     raise e
@@ -136,7 +136,7 @@ class MCPAgent:
                     }
                 })
 
-                yield {"type": "log", "content": f"🛠️  {len(tools)} outils chargés. Début du raisonnement..."}
+                yield {"type": "log", "content": f"  {len(tools)} outils chargés. Début du raisonnement..."}
 
                 # Reasoning Loop
                 while True:
@@ -146,7 +146,7 @@ class MCPAgent:
                     except BadRequestError as e:
                         error_msg = str(e)
                         if "tool_use_failed" in error_msg:
-                            yield {"type": "log", "content": "⚠️ L'IA a mal formaté sa demande. Nouvelle tentative..."}
+                            yield {"type": "log", "content": "L'IA a mal formaté sa demande. Nouvelle tentative..."}
                             # On ajoute un rappel à l'ordre dans l'historique et on continue
                             self.history.append({"role": "user", "content": "Error: You used an invalid format. Do not use XML. Use JSON tool calls."})
                             continue
@@ -172,7 +172,7 @@ class MCPAgent:
                         fn_name = tool_call["function"]["name"]
                         fn_args = json.loads(tool_call["function"]["arguments"])
                         
-                        yield {"type": "log", "content": f"⚙️ Exécution : **{fn_name}**"}
+                        yield {"type": "log", "content": f"Exécution : **{fn_name}**"}
                         
                         try:
                             if fn_name == "local_sentiment_analysis":
@@ -184,7 +184,7 @@ class MCPAgent:
                                 result = "Error: Tool not found."
                         except Exception as e:
                             result = f"Error executing tool: {str(e)}"
-                            yield {"type": "log", "content": f"❌ Erreur outil : {result}"}
+                            yield {"type": "log", "content": f"Erreur outil : {result}"}
 
                         self.history.append({
                             "role": "tool",
@@ -194,10 +194,10 @@ class MCPAgent:
                         })
                         
         except Exception as e:
-            print(f"❌ ERREUR CRITIQUE DANS L'AGENT : {e}")
+            print(f"ERREUR CRITIQUE DANS L'AGENT : {e}")
             if hasattr(e, 'exceptions'):
                 for i, sub_e in enumerate(e.exceptions):
-                    print(f"   🔻 SOUS-ERREUR {i+1}: {sub_e}")
+                    print(f"SOUS-ERREUR {i+1}: {sub_e}")
             import traceback
             traceback.print_exc()
             raise e

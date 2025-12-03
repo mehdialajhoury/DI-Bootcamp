@@ -10,7 +10,7 @@ from agent_logic import MCPAgent
 
 st.set_page_config(page_title="MCP Commander", page_icon="🤖")
 
-st.title("🤖 MCP Research Commander")
+st.title("MCP Research Commander")
 st.markdown("""
 Cet agent intègre **GitHub**, **Filesystem**, et une **Analyse Locale**.
 """)
